@@ -373,10 +373,16 @@ cd "${ProjDirPath}/Debug" && echo y |
  "D:\Download\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.win32_2.2.100.202412061334\tools\bin\STM32_SigningTool_CLI.exe" -bin "${ProjName}.bin" -nk -of 0x80000000 -t fsbl -o "${ProjName}-Trusted.bin" -hv 2.3 -dump "${ProjName}-Trusted.bin"
 ```
 
-In our case, you want to sign two files:
+In our case, we need to sign two files:
 
 `Project_Folder/FSBL/Debug/Project_Name_FSBL.bin`
 `Project_Folder/Appli/Debug/Project_Name_Appli.bin`
+
+To sign these file, we run above command for both FSBL and Appli project:
+
+**FSBL_Project $\rightarrow$ Properties $\rightarrow$ C/C++ Build $\rightarrow$ Settings $\rightarrow$ Build Steps tab $\rightarrow$ Post-build steps $\rightarrow$ Command $\rightarrow$** Copy above command and paste here.
+
+Do the same steps with **Appli_Project**
 ### Generate model weights binary image
 
 In our project folder, we can find at the root a file named `network_data.xSPI2.raw` that contains the weights of the model. This file results from `X-CUBE-AI` and in particular is the result of the `ST Edge AI Core` command running behind it:
