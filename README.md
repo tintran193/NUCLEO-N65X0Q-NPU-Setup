@@ -160,7 +160,7 @@ At this point, the CubeMX design and configuration are complete. In the **Projec
 ## STM32CUBEIDE
 ### FSBL code
 First of all, we need to complement BSEC initialization. First, add the following constants into the _private define area_ of `stm32n6xx_hal_msp.c`
-```c=
+```c
 /* Private define ------------------------*/
 /* USER CODE BEGIN Define */
 #define HSLV_OTP 124
@@ -168,7 +168,7 @@ First of all, we need to complement BSEC initialization. First, add the followin
 /* USER CODE END Define */
 ```
 Then add the following piece of code into the `HAL_XSPI_MspInit` function.
-```c=
+```c
 /* USER CODE BEGIN XSPI2_MspInit 0 */
 BSEC_HandleTypeDef hbsec;
 uint32_t fuse_data = 0;
@@ -196,7 +196,7 @@ Now, we need add some code into the main functions of each project to use the LE
 Note that the initialization added by STM32CubeMX was commented out and this same piece of code was added under the _User Area Code 2_. This was done because the function to turn the LED blue on has to be called before booting the application. This is the only User Area Code available for such a purpose. Be aware that the section commented out may uncomment itself after STM32CubeMX modifications so be sure to comment it before rebuilding.
 
 In `main.c`,
-```c=
+```c
 /*USER CODE BEGIN 2 */
 BSP_LED_Init(LED_BLUE);
 BSP_LED_Init(LED_RED);
@@ -205,7 +205,7 @@ BSP_LED_On(LED_BLUE);
 /*USER CODE END 2 */
 ```
 Moreover, the _Overdrive mode_ selection pin must be high before configuring the clock. Make sure to add the GPIO init function before the system clock initialization.
- ```c=
+ ```c
 /* USER CODE BEGIN Init*/
 MX_GPIO_Init();
 HAL_Delay(1);
@@ -216,14 +216,14 @@ SystemClock_Config();
  ```
 ### Appli code
 At the top of `main.c`, in the _private define_ section, declare the following macro for the `put_char` function.
-```c=
+```c
 /* Private define ------------------------*/
 /* USER CODE BEGIN PD */
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 /* USER CODE END PD */
 ```
 Then, in the `User Code 4` section at the bottom of `main.c`, implement the following functions:
-```c=
+```c
 /* USER CODE BEGIN 4 */
 PUTCHAR_PROTOTYPE
 {
@@ -237,7 +237,7 @@ return len;
 /* USER CODE END 4 */
 ```
 Within `main.c`, in the X-CUBE-AI initialization function `MX_X_CUBE_AI_Init` (in `app_x-cube-ai.c`), enable the RAM sections
-```c=
+```c
 void MX_X_CUBE_AI_Init(void)
 {
 	__HAL_RCC_AXISRAM2_MEM_CLK_ENABLE();
@@ -266,7 +266,7 @@ The `MX_X_CUBE_AI_Process` function below implements the following features:
 - Cleaning and invalidating the MCU DCACHE and invalidating the NPU cache prior to inference.
 - Converting integer table values to float and printing them via UART.
 
-```c=
+```c
 void MX_X_CUBE_AI_Process(void)
 {
     /* USER CODE BEGIN 6 */
@@ -344,7 +344,7 @@ Appli  project $\rightarrow$ Properties $\rightarrow$ C/C++ Build $\rightarrow$ 
 
 To ensure that the application operates correctly , that the peripheral initialization succeeded, and that the main loop is not stuck during inference, add the following two lines of code to blink the red LED:
 
-```c=
+```c
  /* USER CODE BEGIN 2 */
   MX_X_CUBE_AI_Process(); 
   /* USER CODE END 2 */
@@ -363,11 +363,20 @@ To ensure that the application operates correctly , that the peripheral initiali
 ```
 ## Deloy the application 
 ### Sign binary files with Signing Tool
+Embedded systems that implement security features such as TrustZone, as in the STM32N6, require firmware authentication. The STM32-SignTool is a key utility that ensures a secure platform by signing binary images using ECC keys. These signed binaries are used during the STM32 secure boot process to establish a trusted boot chain. This process ensures authentication and integrity checks of the loaded images.
+
+In short, we have to sign the generated binaries before flashing them to the N6.
+
+The Signing Tool executable is located in your STM32CubeProgrammer installation directory (by default: `C:/Program Files/STMicroelectronics/STM32Cube/STM32Cube Programmer/bin/STM32_SigningTool_CLI.exe`) (or can be found in path as below ).
 ```
-cd "${ProjDirPath}/Debug" && echo y | "D:\Download\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.win32_2.2.100.202412061334\tools\bin\STM32_SigningTool_CLI.exe" -bin "${ProjName}.bin" -nk -of 0x80000000 -t fsbl -o "${ProjName}-Trusted.bin" -hv 2.3 -dump "${ProjName}-Trusted.bin"
+cd "${ProjDirPath}/Debug" && echo y |
+ "D:\Download\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.cubeprogrammer.win32_2.2.100.202412061334\tools\bin\STM32_SigningTool_CLI.exe" -bin "${ProjName}.bin" -nk -of 0x80000000 -t fsbl -o "${ProjName}-Trusted.bin" -hv 2.3 -dump "${ProjName}-Trusted.bin"
 ```
 
-Sign two files (FSBL + Appli)
+In our case, you want to sign two files:
+
+`Project_Folder/FSBL/Debug/Project_Name_FSBL.bin`
+`Project_Folder/Appli/Debug/Project_Name_Appli.bin`
 ### Generate model weights binary image
 
 In our project folder, we can find at the root a file named `network_data.xSPI2.raw` that contains the weights of the model. This file results from `X-CUBE-AI` and in particular is the result of the `ST Edge AI Core` command running behind it:
